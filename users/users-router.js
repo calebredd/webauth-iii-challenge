@@ -1,26 +1,29 @@
 const express = require("express"),
   bcrypt = require("bcryptjs"),
   restricted = require("../auth/restricted-middleware.js"),
-  checkRole = require("../auth/check-role-middleware.js");
-router = express.Router();
-const Users = require("./users-model.js");
+  checkRole = require("../auth/check-role-middleware.js"),
+  router = express.Router(),
+  Users = require("./users-model.js"),
+  secrets = require("../config/secrets"),
+  jwt = require("jsonwebtoken");
 
 router.get("/register", (req, res) => {
   res.status(200).send("Welcome to the Register Page");
 });
 router.post("/register", (req, res) => {
-  const { username, password } = req.body;
-  const user = { username };
+  const { username, password, department } = req.body;
+  const user = { username, department };
   const hash = bcrypt.hashSync(password, 10);
   user.password = hash;
   Users.add(user)
     .then(saved => {
-      res.status(201).json(saved);
+      const token = genToken(user);
+      res.status(201).json({ saved, token });
     })
     .catch(error => {
       res.status(500).json(error);
     });
-  res.status(200).json({ message: "Welcome to the Register Page" });
+  // res.status(200).json({ message: "Welcome to the Register Page" });
 });
 
 router.get("/login", (req, res) => {
@@ -28,8 +31,6 @@ router.get("/login", (req, res) => {
 });
 router.post("/login", (req, res) => {
   const { username, password } = req.body;
-
-  //const hash=bcrypt.hashSync(password, 10);
 
   Users.findBy({ username })
     .first()
@@ -45,9 +46,8 @@ router.post("/login", (req, res) => {
       }
     })
     .catch(error => {
-      res.status(500).json(error);
+      res.status(500).json({ error: "Unable to access Database" });
     });
-  res.status(200).json({ message: "Welcome to the Register Page" });
 });
 
 router.get("/", restricted, checkRole("Admin"), (req, res) => {
@@ -64,7 +64,7 @@ function genToken(user) {
   const payload = {
     userid: user.id,
     username: user.username,
-    roles: ["Student", "Admin"]
+    department: user.department
   };
   const options = { expiresIn: "1h" };
   const token = jwt.sign(payload, secrets.jwtSecret, options);

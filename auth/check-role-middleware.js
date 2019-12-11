@@ -1,8 +1,8 @@
-module.exports = role => {
+module.exports = department => {
   return function(req, res, next) {
-    if (req.decodedJwt.roles && req.decodedJwt.roles.includes(role)) {
+    if (req.decodedJwt.department && req.decodedJwt.department.includes(department)) {
       next();
-    } else if (req.decodedJwt.roles.includes("Admin")) {
+    } else if (req.decodedJwt.department.includes("Admin")) {
       next();
     } else {
       res.status(403).json({ you: "Don't have permission" });

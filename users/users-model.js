@@ -3,7 +3,7 @@ const db = require("../data/data-config.js");
 module.exports = { add, find, findBy, findById };
 
 function find() {
-  return db("users").select("id", "username", "password");
+  return db("users").select("id", "username", "password", "department");
 }
 
 function findBy(filter) {
